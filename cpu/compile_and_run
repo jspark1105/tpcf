@@ -1,0 +1,4 @@
+cat compile_and_run
+rm a.out
+mpicxx -cxx=icpc  -O3 -xHost main.cpp  -mt_mpi -lpthread -openmp -no-offload
+mpirun -perhost $4 -n $4 ./a.out $1 $2 $3 $4

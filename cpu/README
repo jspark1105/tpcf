@@ -1,0 +1,56 @@
+
+1. To Compile:
+mpicxx -cxx=icpc  -O3 -xHost main.cpp  -mt_mpi -lpthread -openmp
+source /opt/intel/composerxe/bin/compilervars.sh intel64
+source /opt/intel/impi/4.0.3.008/bin64/mpivars.sh 
+
+If you are using C shell, run *.csh instead of *.sh files mentioned above.
+
+2. To Run:
+mpiexec -perhost 1 -n $4 ./a.out $1 $2 $3 $4
+
+The executable takes in 4 arguments: <D_filename> <R_Filename> <nthreads> <nnodes>
+
+Alternatively, ./compile_and_run can be executed by passing the above 4 arguments. It simply compiles the code, and executes it on '$4' nodes, each with '$3' threads. 
+
+Before running, you need to boot up the MPI run-time by "mpdboot" or you can use mpirun instead of mpiexec.
+
+Please note that our code currently only supports processors with AVX instructions (Sandy Bridge and later).
+You can check this by running "cat /proc/cpuinfo | grep avx". If this prints out something, then you are good to go.
+
+3. The Output: The code outputs the RR and DR histograms. 
+
+4. How to set the other input parameters:
+For now, all other input parameters are set inside the code. A
+nice_to_have feature would be to read all of them fron an input file,
+but that feature is not implemented for now. The paremeters are set as
+follows:
+
+1. global_nrbin = 10; // This sets the number of bins. HIST_BINS needs to be #defined'd to be global_nrbin + 2. 
+2. global_Lbox <-- The normalized size of the box -- min and max are later defined relative to Lbox length... 
+3. global_rminL <-- This sets the minimum radius below which the distances are not binned. 
+3. global_rmaxL <-- This sets the maximum radius above which the distances are not binned. 
+
+As an example, 
+global_Lbox  = 100.0; 
+global_rminL = 0.1; //0.1/100 of the total bounding box length is rmin...
+global_rmaxL = 10.0; // 10/100 of the total bounding box length is rmax...
+global_nrbin = 10; // Total number of histogram bins...
+
+
+5. File Format:
+Function Read_D_R_File() reads the input files. A proprietary file format is used --  Any given input file needs to be converted to this format. 
+The first 11 bytes need to be 'PCLLBL95123'. This is just a signature.
+This is followed by total number of galaxies/data-points stored in the file.  
+This number is a 'long long int' (8 bytes on most architectures). 
+This is followed by X coordinates of all the points (each is a 4-byte
+floating point number), followed by
+Y-coordinates (each is a 4-byte floating point number) and finally the
+Z-ccordinates of all the points (each is a 4-byte floating point
+number). 
+
+Size(float) == 4 bytes.
+Let there by 'N points. So total file size = 19 + 3*4*N bytes. 
+
+
+
