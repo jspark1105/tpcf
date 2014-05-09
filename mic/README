@@ -1,0 +1,6 @@
+
+To run:
+
+./compile_and_run_mic <Dir_Name> <nthreads> <nnodes>
+
+The Directory (Dir_Name) should contain the data file (named input_D.bin) and Random File (input_R_0.bin)

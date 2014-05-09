@@ -1,0 +1,46 @@
+#!/bin/bash
+
+RUN="Hetero_2_JCH"
+
+if [ ! $# == 3 ];
+then
+    echo "Format: ./compile_and_run <Data4> <nthreads> <nnodes> "
+    exit
+fi
+NTHREADS=$2
+NNODES=$3
+
+echo
+echo "Generating run script..."
+echo '#!/bin/bash' > lfs_script_${NTHREADS}_${NNODES}
+echo "source /opt/intel/lrb/Compilers/latest/composer_xe_2013.1.117/bin/compilervars.sh intel64" >> lfs_script_${NTHREADS}_${NNODES}
+echo "source /opt/intel/lrb/mpi/4.1.0.024/intel64/bin/mpivars.sh" >> lfs_script_${NTHREADS}_${NNODES}
+echo "cd /panfs/panfs2/home2/user_name/dir_name" >> lfs_script_${NTHREADS}_${NNODES}
+
+echo "mpicxx -cxx=icpc -o tpcf.exe.${NTHREADS}.${NNODES} -O3 -xAVX -openmp main.cpp -mt_mpi" >> lfs_script_${NTHREADS}_${NNODES}
+echo export DAT_OVERRIDE=/opt/crtdc/dapl/dat.conf >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DEVICE=rdssm:ofa-scm >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_FALLBACK_DEVICE=disable >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_PIN=1 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DYNAMIC_CONNECTION=0 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_EAGER_THRESHOLD=18062144 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DAPL_BUFFER_NUM=4024 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DAPL_SR_BUF_NUM=4024 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DAPL_DESIRED_STATIC_CONNECTIONS_NUM=1062144 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DAPL_UD_SEND_BUFFER_NUM=1062144 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_DAPL_UD_RECV_BUFFER_NUM=1062144 >> lfs_script_${NTHREADS}_${NNODES}
+echo export I_MPI_TIMER_KIND=rdtsc >> lfs_script_${NTHREADS}_${NNODES}
+echo 'NNODES=$(sort -u $PBS_NODEFILE |grep -c ^)' >> lfs_script_${NTHREADS}_${NNODES}
+echo 'RANKS=$(grep -c ^ $PBS_NODEFILE)' >> lfs_script_${NTHREADS}_${NNODES}
+
+echo 'echo "MPD_SECRETWORD=nosecrets" > $HOME/.mpd.conf' >> lfs_script_${NTHREADS}_${NNODES}
+echo 'chmod 600 $HOME/.mpd.conf' >> lfs_script_${NTHREADS}_${NNODES}
+echo mpdboot -r ssh -n $NNODES -f '$PBS_NODEFILE' >> lfs_script_${NTHREADS}_${NNODES}
+echo mpiexec -perhost 1 -n $NNODES ${HOME}/panfs/TPCF/Hetero_2_JCH/tpcf.exe.${NTHREADS}.${NNODES} ${HOME}/panfs/TPCF/Hetero_2_JCH/$1 $2 $3 >> lfs_script_${NTHREADS}_${NNODES}
+echo mpdallexit >> lfs_script_${NTHREADS}_${NNODES}
+chmod +x ${HOME}/panfs/TPCF/Hetero_2_JCH/lfs_script_${NTHREADS}_${NNODES}
+
+echo
+echo "Executing lfs script, enqueuing job"
+echo bsub -R "${NNODES}*{select[kncB0x1] span[ptile=1]}" -q hoelleq -o  tpcf.out.${NTHREADS}.${NNODES} -W 109 $HOME/panfs/TPCF/Hetero_2_JCH/lfs_script_${NTHREADS}_${NNODES}
+bsub -R "${NNODES}*{select[kncB0x1] span[ptile=1]}" -q hoelleq -o  tpcf.out.${NTHREADS}.${NNODES} -W 109 $HOME/panfs/TPCF/Hetero_2_JCH/lfs_script_${NTHREADS}_${NNODES}
