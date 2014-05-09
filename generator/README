@@ -1,0 +1,5 @@
+1. To compile and run:
+
+./compile_and_run <out_file_name> <num_of_galaxies> [random_seed]
+
+random_seed is an optional argument. If omitted, 0 is used.

@@ -1,0 +1,2 @@
+g++ -O3 -o generate generate.cpp
+./generate $1 $2 $3 $4
